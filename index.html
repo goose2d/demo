@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            overflow: hidden;
+        }
+        
+        canvas {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script src="js/framework/audio.js"></script>
+    <script src="js/framework/gameObject.js"></script>
+    <script src="js/framework/game.js"></script>
+    <script src="js/framework/touch.js"></script>
+</head>
+
+<body>
+    <canvas id="canvas">
+        Your browser does not support the HTML5 canvas tag.
+    </canvas>
+    <script>
+        "use strict";
+        const randomInteger = (min, max) => {
+            let rand = min + Math.random() * (max - min);
+            return Math.round(rand);
+        }
+        class Hero extends GameObject {
+            constructor(x, y, vx, vy) {
+                super("hero", x, y, vx, vy, 15 * 4, 19 * 4);
+                const imgRight = new Image();
+                imgRight.src = "assets/lizard_right.png";
+                this.imgRight = imgRight;
+                const imgLeft = new Image();
+                imgLeft.src = "assets/lizard_left.png";
+                this.imgLeft = imgLeft;
+                this.img = this.imgRight;
+
+                this.score = 0;
+            }
+
+            onCollidingWith(name) {
+                if (name == "heart") {
+                    this.score += 1;
+                    audioMaker.play(audioKind.Powerup612, 1);
+                }
+
+                if (name == "bomb") {
+                    this.score -= 10;
+                    audioMaker.play(audioKind.Hit349, 1);
+                }
+            }
+
+            draw(context) {
+                context.drawImage(this.img, this.x, this.y, this.width, this.height);
+                context.fillText("score: " + this.score, 10, 30);
+            }
+
+            update(secondsPassed) {
+                // Move with set velocity
+
+                const {
+                    key
+                } = window
+                switch (key) {
+                    case "up":
+                        // this.vx = 0;
+                        // this.vy = -100;
+                        break;
+                    case "down":
+                        // this.vx = 0;
+                        // this.vy = 100;
+                        break;
+                    case "left":
+                        this.vx = -200;
+                        // this.vy = 0;
+                        this.img = this.imgLeft;
+                        break;
+                    case "right":
+                        this.vx = 200;
+                        // this.vy = 0;
+                        this.img = this.imgRight;
+                        break;
+                    default:
+                        this.vx = 0;
+                        // this.vy = 0;
+                        break;
+                }
+                this.move(secondsPassed)
+            }
+        }
+
+        class Bomb extends GameObject {
+            constructor(x, y) {
+                super("bomb", x, y, 0, 200, 68, 102);
+                const img = new Image();
+                img.src = "assets/bomb.png";
+                this.img = img;
+            }
+
+            draw(context) {
+                context.drawImage(this.img, this.x, this.y, this.width, this.height);
+            }
+
+            update(secondsPassed) {
+                if (this.y >= window.innerHeight) {
+                    this.isDie = true;
+                }
+                this.move(secondsPassed)
+            }
+
+            onCollidingWith(name) {
+                if (name == "hero") {
+                    this.isDie = true;
+                }
+            }
+        }
+
+        class Heart extends GameObject {
+            constructor(x, y) {
+                super("heart", x, y, 0, 200, 60, 60);
+                const img = new Image();
+                img.src = "assets/heart.png";
+                this.img = img;
+            }
+
+            draw(context) {
+                context.drawImage(this.img, this.x, this.y, this.width, this.height);
+            }
+
+            update(secondsPassed) {
+                if (this.y >= window.innerHeight) {
+                    this.isDie = true;
+                }
+                this.move(secondsPassed)
+            }
+
+            onCollidingWith(name) {
+                if (name == "hero") {
+                    this.isDie = true;
+                }
+            }
+        }
+
+        const gameObjects = [];
+
+        const init = () => {
+            const hero = new Hero(window.innerWidth / 2, 10, 0, 300)
+            hero.x -= hero.width / 2;
+            hero.stayInScreen(true);
+            hero.enableCollision(true);
+            gameObjects.push(hero);
+            const game = new Game({
+                canvasId: "canvas",
+                enableSwipedetect: true,
+                enableDebugMode: true
+            });
+            setInterval(() => {
+                const h = new Heart(randomInteger(0, window.innerWidth - 120), -100)
+                h.enableCollision(true);
+                gameObjects.push(h);
+            }, 1000)
+            setInterval(() => {
+                const bomb = new Bomb(randomInteger(0, window.innerWidth - 120), -100)
+                bomb.enableCollision(true);
+                gameObjects.push(bomb);
+            }, 3000)
+            game.loop();
+        };
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>
